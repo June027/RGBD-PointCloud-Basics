@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.venv/
+
+# Reproducible generated artifacts
+results/cloud.ply
+results/points_camera_m.npy
+results/viewer.html

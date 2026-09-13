@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>实验 01 · RGB-D 转点云</title>
+<style>
+body{font:16px/1.6 system-ui,sans-serif;background:#f3f5f7;color:#172536;margin:0;padding:24px}main{max-width:1000px;margin:auto}h1{font-size:26px;margin:0 0 6px}p{margin:8px 0 18px}.inputs{display:flex;gap:24px;flex-wrap:wrap}figure{margin:0}img{width:320px;max-width:100%;image-rendering:pixelated}figcaption{padding:6px 0}canvas{background:#101c2a;width:100%;height:420px;display:block;touch-action:none}label{display:inline-flex;gap:10px;align-items:center;margin:12px 20px 12px 0}input{width:180px}.muted{color:#506174}button{padding:6px 14px;cursor:pointer}code{background:#e2e8ee;padding:2px 5px}
+</style><main>
+<h1>实验 01：RGB-D → 彩色点云</h1>
+<p class="muted">合成教学数据：红色方形面深度 1 m，背景墙深度 2 m。红色区域由程序指定，没有调用识别模型。</p>
+<div class="inputs"><figure><img src="__RGB__" alt="合成彩色图：红色方形位于棋盘格背景前方"><figcaption>RGB · 320 × 240</figcaption></figure><figure><img src="__DEPTH__" alt="深度预览：红色面为灰色，背景为白色"><figcaption>深度预览 · 灰色 1 m / 白色 2 m</figcaption></figure></div>
+<label>旋转 <input id="yaw" type="range" min="-80" max="80" value="-32"><output id="angle">-32°</output></label>
+<label>俯仰 <input id="pitch" type="range" min="-65" max="65" value="15"><output id="tilt">15°</output></label>
+<button id="front" type="button">正视图</button>
+<canvas id="cloud" role="img" aria-label="可旋转的三维点云，显示相隔一米的红色面和背景墙"></canvas>
+<p>相机坐标：X 向右，Y 向下，Z 向前；单位为米。拖动滑块或点云可改变观察角度。</p>
+<p>验证结果：中心像素 <code>(160, 120)</code> → <code>(0, 0, 1) m</code>；红色面左右边缘像素中心间距 <code>0.200 m</code>。</p>
+<p class="muted">点云仅包含单帧能看见的表面；遮挡后的墙面缺失是正常现象。这还不是完整地图。</p>
+</main><script>
+const points=__POINTS__;
+const canvas=document.getElementById('cloud'),ctx=canvas.getContext('2d');
+const yaw=document.getElementById('yaw'),pitch=document.getElementById('pitch');
+function draw(){
+ const w=canvas.clientWidth,h=420,dpr=window.devicePixelRatio||1;
+ canvas.width=w*dpr;canvas.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+ const a=+yaw.value*Math.PI/180,b=+pitch.value*Math.PI/180,s=Math.min(w/3,190);
+ document.getElementById('angle').value=yaw.value+'°';document.getElementById('tilt').value=pitch.value+'°';
+ function project(x,y,z){z-=1.5;const xx=Math.cos(a)*x+Math.sin(a)*z,zz=-Math.sin(a)*x+Math.cos(a)*z;return [w/2+xx*s,h/2+(Math.cos(b)*y-Math.sin(b)*zz)*s,Math.sin(b)*y+Math.cos(b)*zz];}
+ const pp=points.map(p=>[...project(p[0],p[1],p[2]),p[3],p[4],p[5]]).sort((a,b)=>b[2]-a[2]);
+ for(const p of pp){ctx.fillStyle=`rgb(${p[3]},${p[4]},${p[5]})`;ctx.fillRect(p[0],p[1],2.6,2.6);}
+ ctx.fillStyle='#e0e8f0';ctx.font='14px system-ui';ctx.fillText('Camera frame · meters · orthographic view',16,25);
+ // Orientation triad follows the same rotation as the cloud.
+ const origin=project(0,0,1.5);
+ for(const [name,end,color] of [['X',[.22,0,1.5],'#ff9b91'],['Y',[0,.22,1.5],'#9bd9a7'],['Z',[0,0,1.72],'#8cc4ff']]){
+  const q=project(...end),ox=55,oy=h-60;ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+q[0]-origin[0],oy+q[1]-origin[1]);ctx.stroke();ctx.fillStyle=color;ctx.fillText(name,ox+q[0]-origin[0]+5,oy+q[1]-origin[1]);
+ }
+}
+yaw.oninput=pitch.oninput=draw;document.getElementById('front').onclick=()=>{yaw.value=0;pitch.value=0;draw()};
+let previous=null;canvas.onpointerdown=e=>{previous=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId)};
+canvas.onpointermove=e=>{if(!previous)return;yaw.value=Math.max(-80,Math.min(80,+yaw.value+(e.clientX-previous[0])*.4));pitch.value=Math.max(-65,Math.min(65,+pitch.value-(e.clientY-previous[1])*.4));previous=[e.clientX,e.clientY];draw()};
+canvas.onpointerup=canvas.onpointercancel=()=>previous=null;window.addEventListener('resize',draw);draw();
+</script></html>
