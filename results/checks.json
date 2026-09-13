@@ -1,0 +1,33 @@
+{
+  "data_source": "synthetic; hand-specified red face and wall",
+  "frame": "+X right, +Y down, +Z forward; meters",
+  "intrinsics_fx_fy_cx_cy": [
+    300.0,
+    300.0,
+    160.0,
+    120.0
+  ],
+  "depth_scale_raw_units_per_meter": 1000,
+  "point_count": 76800,
+  "center_pixel_uv": [
+    160,
+    120
+  ],
+  "center_point_xyz_m": [
+    0.0,
+    0.0,
+    1.0
+  ],
+  "red_face_width_between_pixel_centers_m": 0.2,
+  "off_axis_pixel_uv": [
+    190,
+    120
+  ],
+  "off_axis_xyz_m": [
+    0.1,
+    0.0,
+    1.0
+  ],
+  "off_axis_range_m": 1.004987562112089,
+  "checks": "PASS"
+}
